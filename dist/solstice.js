@@ -1,5 +1,12 @@
 /**
  * A simple Solr wrapper for AngularJS apps
+ * @version v0.0.2 - 2014-10-27
+ * @link https://github.com/front/solstice
+ * @author Élio Cró <elio@front.no>
+ * @license MIT License, http://www.opensource.org/licenses/MIT
+ */
+/**
+ * A simple Solr wrapper for AngularJS apps
  * @version v0.0.2 - 2013-11-28
  * @link https://github.com/front/solstice
  * @author Élio Cró <elio@front.no>
@@ -18,18 +25,46 @@
       setEndpoint: function (url) {
         defEndpoint = url;
       },
-      $get: function ($http) {
+      $get: function ($http, $q) {
         function Solstice(endpoint) {
+          var self = this;
+          this.aborter = $q.defer();
+
           this.search = function(options) {
-            var url = endpoint + '/select/';
-            var defaults = {
-              wt: 'json',
-              'json.wrf': 'JSON_CALLBACK'
-            };
+            var url = endpoint + '/select/',
+              defaults = {
+                wt: 'json',
+                'json.wrf': 'JSON_CALLBACK'
+              };
+
             ng.extend(defaults, options);
-            return $http.jsonp(url, {
-              params: defaults
-            });
+
+              var $Abort = $q.defer(),
+               request = $http.jsonp(url, {
+                params: defaults,
+                timeout: $Abort
+              }),
+              promise = request.then(function(response){
+                return (response);
+              });
+
+              promise.catch(function(response){
+                return (response);
+              });
+
+              promise.abort= function(){
+                console.log('Aborted');
+                $Abort.resolve();
+              };
+
+              promise.finally(function(){
+                promise.abort = angular.noop;
+                $Abort = request = promise = null;
+              });
+
+              return (promise)
+
+
           };
           this.withEndpoint = function (url) {
             return new Solstice(url);
